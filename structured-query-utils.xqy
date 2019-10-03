@@ -36,11 +36,17 @@ declare function sq:named-options($name as xs:string) as element(search:options)
 
 declare function sq:named-options-qconsole($name as xs:string) as element(search:options)?
 {
-  sq:named-options-qconsole($name, ())
+  sq:named-options-qconsole($name, xdmp:server-name(xdmp:server()),())
+};
+
+declare function sq:named-options-qconsole($name as xs:string, $server as xs:string) as element(search:options)?
+{
+  sq:named-options-qconsole($name, "Default", $server)
 };
 
 declare function sq:named-options-qconsole(
   $name as xs:string,
+  $server as xs:string,
   $group as xs:string?
 ) as element(search:options)?
 {
@@ -53,13 +59,12 @@ declare function sq:named-options-qconsole(
     import module namespace eput = "http://marklogic.com/rest-api/lib/endpoint-util" at "/MarkLogic/rest-api/lib/endpoint-util.xqy";
 
     declare variable $name as xs:string external;
+    declare variable $server-name as xs:string external;
     declare variable $group as xs:string external := "Default";
 
     let $server :=
-      let $server := xdmp:server-name(xdmp:server())
-      return
-        if ($server ne "App-Services")
-        then $server
+        if ($server-name ne "App-Services")
+        then $server-name
         else 
           let $config := admin:get-configuration()
           let $groupid := admin:group-get-id($config, $group)
@@ -71,8 +76,9 @@ declare function sq:named-options-qconsole(
 
     let $uri := eput:make-document-uri($config-query:storage-prefix || $name, (), $server)
     return dbut:access-config(function() { fn:doc($uri)/node() })',
-    (
-      xs:QName("name"), $name,
-      xs:QName("group"), $group
-    ))
+    map:map()
+    =>map:with("name", $name),
+    =>map:with("group", $group),
+    =>map:with("server", server)
+  )
 };
