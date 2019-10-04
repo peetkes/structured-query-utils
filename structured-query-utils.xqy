@@ -41,7 +41,7 @@ declare function sq:named-options-qconsole($name as xs:string) as element(search
 
 declare function sq:named-options-qconsole($name as xs:string, $server as xs:string) as element(search:options)?
 {
-  sq:named-options-qconsole($name, "Default", $server)
+  sq:named-options-qconsole($name, $server, "Default")
 };
 
 declare function sq:named-options-qconsole(
@@ -59,12 +59,12 @@ declare function sq:named-options-qconsole(
     import module namespace eput = "http://marklogic.com/rest-api/lib/endpoint-util" at "/MarkLogic/rest-api/lib/endpoint-util.xqy";
 
     declare variable $name as xs:string external;
-    declare variable $server-name as xs:string external;
+    declare variable $server as xs:string external;
     declare variable $group as xs:string external := "Default";
 
-    let $server :=
-        if ($server-name ne "App-Services")
-        then $server-name
+    let $server-name :=
+        if ($server ne "App-Services")
+        then $server
         else 
           let $config := admin:get-configuration()
           let $groupid := admin:group-get-id($config, $group)
@@ -74,11 +74,11 @@ declare function sq:named-options-qconsole(
                 admin:appserver-get-type($config, $id) eq "http"
           return admin:appserver-get-name($config, $id)
 
-    let $uri := eput:make-document-uri($config-query:storage-prefix || $name, (), $server)
+    let $uri := eput:make-document-uri($config-query:storage-prefix || $name, (), $server-name)
     return dbut:access-config(function() { fn:doc($uri)/node() })',
     map:map()
     =>map:with("name", $name),
-    =>map:with("group", $group),
     =>map:with("server", server)
+    =>map:with("group", $group),
   )
 };
